@@ -8,6 +8,7 @@ use version; our $VERSION = qv("v2.0.0");
 use perl5i::2;
 use Method::Signatures;
 use Path::Class;
+use Data::Dumper;
 
 has "owner" =>
   is            => 'ro',
@@ -36,20 +37,34 @@ method BUILD( HashRef $args ) {
 }
 
 method exists_on_github( Str :$owner //= $self->owner, Str :$repo //= $self->repo ) {
-    my $repo_obj;
+       # Something weird is going on with variables here. 
+       # However, this seems to work, and is alot nicer on the 
+       # eyes. 
+       # --gdey
+       # TODO: [gdey]
+       # I would maybe change the syntax around a bit.
+       #  method exists_on_github( ... ) try {
+       #     $self->repos->get($owner, $repo) ? 1 : 0
+       #  } catch on (/^(:?Error:\s*)?Not Found\b/) {
+       #     0 
+       #  } catch {
+       #     croak "Error checking if a $owner/$repo exists: $_";
+       #     0
+       #  } 
+       #
     try {
-        $repo_obj = $self->repos->get($owner, $repo);
+        $self->repos->get($owner, $repo) ? 1 : 0
     }
     catch {
-        when( /^Not Found\b/ ) {
-            return 0
+        say "Got error: $_";
+        when( /^(:?Error:\s*)?Not Found\b/ ) {
+            0
         }
         default {
             croak "Error checking if a $owner/$repo exists: $_";
+            0
         }
     };
-
-    return $repo_obj ? 1 : 0;
 }
 
 method create_repo( Str :$repo?, Str :$desc, Str :$homepage ) {
