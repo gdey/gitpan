@@ -5,6 +5,8 @@ extends 'Net::GitHub::V3';
 
 use version; our $VERSION = qv("v2.0.0");
 
+our $MAX_REPO_NAME_LENGTH = 100;
+
 use perl5i::2;
 use Method::Signatures;
 use Path::Class;
@@ -56,7 +58,6 @@ method exists_on_github( Str :$owner //= $self->owner, Str :$repo //= $self->rep
         $self->repos->get($owner, $repo) ? 1 : 0
     }
     catch {
-        say "Got error: $_";
         when( /^(:?Error:\s*)?Not Found\b/ ) {
             0
         }
@@ -64,7 +65,7 @@ method exists_on_github( Str :$owner //= $self->owner, Str :$repo //= $self->rep
             croak "Error checking if a $owner/$repo exists: $_";
             0
         }
-    };
+    }
 }
 
 method create_repo( Str :$repo?, Str :$desc, Str :$homepage ) {

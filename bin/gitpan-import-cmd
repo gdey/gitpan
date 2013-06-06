@@ -1,0 +1,117 @@
+#!/bin/perl
+use v5.12;
+use warnings;
+use FindBin qw($Bin);
+use lib "$Bin/../lib";
+$|++;
+
+
+   # Enable us to do a git-ification of BackPan or a distrubution.
+
+use Gitpan::Command::Import;
+
+
+Gitpan::Command::Import->new->main();
+
+
+__END__
+
+=head1 NAME
+
+gitpan import - Import all of BackPAN to github
+
+=head1 SYNOPSIS
+
+    gitpan import [options] [dist] [dist] ...
+
+=head1 DESCRIPTION
+
+gitpan is a script to import large chunks (or all of) BackPAN into git
+and github.  It allows you to select BackPAN distributions to import
+and control importing to github.
+
+=head1 OPTIONS
+
+=head2 Distribution Selection
+
+By default, gitpan will import every distribution on BackPAN.  You can
+override this by passing it a list of distributions on the command
+line or the following.
+
+=head3 --author
+
+Import all the options of a particular author.  Give it their CPAN id.
+For example
+
+    gitpan --author=MSCHWERN
+
+=head3 --random
+
+Pick N random distributions.
+
+    gitpan --random=100
+
+=head3 --pattern
+
+Pick all distributions matching the given pattern.
+
+    # Import all the D's.
+    gitpan --pattern='^[Dd]'
+
+=head3 --sort
+
+Sort the distributions before processing
+
+=head3 --since
+
+Pick only distributions which have changed since the given time.
+
+Time is given in Unix epoch time.
+
+    gitpan --since=1200000000
+
+
+=head2 Github
+
+=head3 --github
+
+If this option is passed, it will create a repository on github and
+push the repo.
+
+=head3 --login
+
+Your github login name, only necessary if --github is set.
+
+=head3 --token
+
+Your github API token, only necessary if --github is set.
+
+
+=head2 BackPAN
+
+=head3 --backpan
+
+A comma seperated list of URLs to BackPAN.  Handy to have a URL to a
+local mirror for fast retrieval and one to a remote mirror for
+completeness.
+
+For example
+
+    --backpan=file:///var/local/backpan,http://backpan.perl.org
+
+Defaults to http://backpan.perl.org/
+
+=head3 --backpan_index
+
+A URL to find the BackPAN::Index file.  Overrides the default.
+
+=head2 Building
+
+=head3 --tempdir
+
+The temporary directory gitpan uses.
+
+Defaults to whatever L<File::Temp> does.
+
+
+
