@@ -33,18 +33,16 @@ has directory =>
   required  => 1,
   lazy      => 1,
   coerce    => 1,
-  default     => method {
-      $self->distname;
-  };
+  default   => sub { $_[0]->distname };
 
 has git     =>
   isa       => "Gitpan::Git",
   is        => 'rw',
   required  => 1,
   lazy      => 1,
-  default   => method {
+  default   => sub {
       require Gitpan::Git;
-      return Gitpan::Git->init($self->directory);
+      return Gitpan::Git->init($_[0]->directory);
   };
 
 has github  =>
@@ -80,7 +78,8 @@ method _new_github(HashRef $args = {}) {
 
 method exists_on_github() {
     # Optimization, asking github is expensive
-    return 1 if $self->git->remote("origin") =~ /github.com/;
+    my $origin = $self->git->remote("origin");
+    return 1 if defined $origin && $origin =~ /github.com/;
     return $self->github->exists_on_github();
 }
 

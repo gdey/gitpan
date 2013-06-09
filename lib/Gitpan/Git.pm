@@ -139,9 +139,12 @@ method last_cpan_version {
     return $2;
 }
 
-method work_tree {
-    return dir($self->SUPER::work_tree);
+method work_tree { dir($self->SUPER::work_tree) }
+method add_all   { $self->run('add', '--all') }
+method commit ($message, @args) {
+   $self->run( commit => '-m', $message,  @args );
 }
+
 
 
 # Git::Repository isn't a Moose class

@@ -82,13 +82,23 @@ has extract_dir =>
   isa           => 'Path::Class::Dir',
   coerce        => 1;
 
+around BUILDARGS => sub {
+   my $orig = shift;
+   my $class = shift;
+   my %args = @_;
+      # Provide a nicer API for the building up a dist object.
+   $args{version} = $args{backpan_release}->get_column('version') if exists $args{backpan_release};
+   $class->$orig( %args );
+};
+
 method get {
+    my $filename = $self->archive_file;
     my $res = $self->ua->get(
         $self->url,
-        ":content_file" => $self->archive_file.""
+        ":content_file" => "$filename"
     );
 
-    croak "File not fully retrieved" unless -s $self->archive_file == $self->size;
+    croak "File ($filename) not fully retrieved" unless -e $self->archive_file  && -s _ == $self->size;
 
     return $res;
 }
@@ -110,8 +120,23 @@ method extract {
 
     return $self->extract_dir;
 }
+  # This method returns the authors email address.
+method author_email { $self->author->author.' <'.$self->author->email.'> ' }
+  # A method that will provide a nice git commit message; for this release.
+method commit_message {
+  my ( $name,           $release_version,       $cpanid,               $backpan_file ) = 
+     ( $self->distname, $self->backpan_release, $self->author->cpanid, $self->backpan_file );
+  <<MSG;
+initial import of $name $release_version from CPAN.
 
-# Make sure the archive files are readable and the directories are traversable.
+git-cpan-module: $name
+git-cpan-version: $release_version
+git-cpan-authorid: $cpanid
+git-cpan-file: $backpan_file
+MSG
+
+}
+  # Make sure the archive files are readable and the directories are traversable.
 method fix_permissions {
     return unless -d $self->extract_dir;
 

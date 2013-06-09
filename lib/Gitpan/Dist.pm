@@ -24,9 +24,24 @@ has repo =>
       );
   };
 
-method backpan_dist {
+has backpan_dist => 
+   is           => 'rw',
+   isa          => 'BackPAN::Index::Dist',
+   lazy         => 1,
+   builder      => method {
     return $self->backpan_index->dist($self->name);
-}
+};
+
+
+around BUILDARGS => sub {
+   my $orig = shift;
+   my $class = shift;
+   my %args = @_;
+      # Provide a nicer API for the building up a dist object.
+   $args{name} = $args{backpan_dist}->get_column('name') if exists $args{backpan_dist} && 
+                                                            !exists $args{name};
+   $class->$orig( %args );
+};
 
 method backpan_releases {
     return $self->backpan_dist->releases->search(
@@ -35,6 +50,13 @@ method backpan_releases {
         { order_by => { -asc => "date" } } );
 }
 
+method releases {
+   require Gitpan::Release;
+   my $brelease = $self->backpan_releases;
+   bless 'GDEY::Proyx', sub {
+      
+   }
+}
 
 method release(Str :$version) {
     require Gitpan::Release;
@@ -43,3 +65,5 @@ method release(Str :$version) {
         version         => $version
     );
 }
+
+1;
