@@ -144,6 +144,9 @@ method add_all   { $self->run('add', '--all') }
 method commit ($message, @args) {
    $self->run( commit => '-m', $message,  @args );
 }
+method tag ( $tagname, $message) {
+   $self->run( tag => '-a', '-m', $message, $tagname );
+}
 
 
 

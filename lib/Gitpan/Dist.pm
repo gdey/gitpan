@@ -50,14 +50,6 @@ method backpan_releases {
         { order_by => { -asc => "date" } } );
 }
 
-method releases {
-   require Gitpan::Release;
-   my $brelease = $self->backpan_releases;
-   bless 'GDEY::Proyx', sub {
-      
-   }
-}
-
 method release(Str :$version) {
     require Gitpan::Release;
     return Gitpan::Release->new(

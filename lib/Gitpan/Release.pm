@@ -120,6 +120,7 @@ method extract {
 
     return $self->extract_dir;
 }
+method release_version { $self->backpan_release };
   # This method returns the authors email address.
 method author_email { $self->author->author.' <'.$self->author->email.'> ' }
   # A method that will provide a nice git commit message; for this release.

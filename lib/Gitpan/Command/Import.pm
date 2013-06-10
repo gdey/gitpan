@@ -44,16 +44,15 @@ method new_gitpan_repo( $distname ){ Gitpan::Repo->new( distname => $distname ) 
 
 method gitify_release( $release, $repo ) {
      # Obtain the release
-  #$release->get;
-  #my $extrated_dir = $release->extract;
+  $release->get;
+  my $extrated_dir = $release->extract;
   say "Work dir: ".$release->work_dir;
-
   say "repo dir: ".$repo->directory;
-  my $message = $relase->commit_message;
-  #$repo->git->clean;
-  #dircopy( $extrated_dir, $repo->directory );
+  my $message = $release->commit_message;
+  dircopy( $extrated_dir, $repo->directory );
   $repo->git->add_all;
   $repo->git->commit($message, '--date', $release->date, '--author',$release->author_email );
+  $repo->git->tag($release->release_version, $message);
 }
 method main {
 
@@ -66,18 +65,20 @@ method main {
    my $first = $dists->first;
    say 'The first one is: '.$first->get_column('name');
    #my $dist = Gitpan::Dist->new( backpan_dist => $first );
+
    my $dist = Gitpan::Dist->new( name => 'MapReduce' );
    my $releases = $dist->backpan_releases;
+   my $repo = Gitpan::Repo->new( distname =>  'Goodday' );
+   $repo->git->clean;
+
    say 'The number of release(s) are: '.$releases->count;
    say 'The number of release(s) are: '.join(',',$releases->get_column('version')->all);
-   my $first_release = $releases->first;
-   my $name = $dist->name;
-   #my $repo = Gitpan::Repo->new( distname => $name );
-   my $repo = Gitpan::Repo->new( distname =>  'Goodday' );
-   my $release = Gitpan::Release->new( 
-         distname => $name, 
-         backpan_release => $first_release,
-   );
-  $self->gitify_release( $release, $repo );
+   while( my $backpan_release = $releases->next ){
+        my $release = Gitpan::Release->new(
+           distname => $dist->name,
+           backpan_release => $backpan_release
+        );
+        $self->gitify_release( $release, $repo );
+   }
 }
 
