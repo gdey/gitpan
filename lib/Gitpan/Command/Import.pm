@@ -43,6 +43,20 @@ method default_options {
 method new_gitpan_repo( $distname ){ Gitpan::Repo->new( distname => $distname ) }
 
 method gitify_release( $release, $repo ) {
+
+     # We need to see if the release already exists in the repo.
+     # We assume that this repo has already been checkout and an preped for us.
+     # We also assume that we can find each release with the corrosponding tag.
+  my %tags = map { $_ => 1 } $repo->git->tags;
+     # We are going to skip release, we have already done.
+     # TODO: This is not fully correct. We need to extract out the 
+     #       release, and make sure there weren't any changes. We can not trust 
+     #       the contents of a release has not changed. It should never changes;
+     #       but it's hard to know for sure.
+  if( exists $tags{$release->release_version} ) {
+      say 'Release '.$release->release_version.' already in repo.';
+      return;
+  }
      # Obtain the release
   $release->get;
   my $extrated_dir = $release->extract;
@@ -71,8 +85,8 @@ method main {
    my $repo = Gitpan::Repo->new( distname =>  'Goodday' );
    $repo->git->clean;
 
-   say 'The number of release(s) are: '.$releases->count;
-   say 'The number of release(s) are: '.join(',',$releases->get_column('version')->all);
+   say 'The number of release(s) for MapReduce are: '.$releases->count;
+   say 'The versions for MapReduce are: '.join(',',$releases->get_column('version')->all);
    while( my $backpan_release = $releases->next ){
         my $release = Gitpan::Release->new(
            distname => $dist->name,
