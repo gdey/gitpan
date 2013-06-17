@@ -13,12 +13,15 @@ use Path::Class;
 use Data::Dumper;
 
 has "owner" =>
-  is            => 'ro',
+  is            => 'rw',
   isa           => 'Str',
+  lazy          => 1,
   default       => 'gitpan',
 ;
 
 has "+access_token" =>
+  is            => 'rw',
+  lazy          => 1,
   default       => sub {
       return $ENV{GITPAN_GITHUB_ACCESS_TOKEN} ||
              # A read only token for testing

@@ -8,6 +8,7 @@ use Gitpan::Repo;
 use Gitpan::Release;
 use File::Copy::Recursive qw(dircopy);
 use Path::Class;
+use Try::Tiny;
 
 use perl5i::2;
 use Method::Signatures;
@@ -47,7 +48,7 @@ method gitify_release( $release, $repo ) {
      # We need to see if the release already exists in the repo.
      # We assume that this repo has already been checkout and an preped for us.
      # We also assume that we can find each release with the corrosponding tag.
-  my %tags = map { $_ => 1 } $repo->git->tags;
+  my %tags = map { $_ => 1 } $repo->tags;
      # We are going to skip release, we have already done.
      # TODO: This is not fully correct. We need to extract out the 
      #       release, and make sure there weren't any changes. We can not trust 
@@ -55,6 +56,7 @@ method gitify_release( $release, $repo ) {
      #       but it's hard to know for sure.
   if( exists $tags{$release->release_version} ) {
       say 'Release '.$release->release_version.' already in repo.';
+      $repo->git->command('checkout', $releases->release_version, '-b', $release->release_version.'-gitpan-work');
       return;
   }
      # Obtain the release
@@ -64,10 +66,39 @@ method gitify_release( $release, $repo ) {
   say "repo dir: ".$repo->directory;
   my $message = $release->commit_message;
   dircopy( $extrated_dir, $repo->directory );
-  $repo->git->add_all;
-  $repo->git->commit($message, '--date', $release->date, '--author',$release->author_email );
-  $repo->git->tag($release->release_version, $message);
+  $repo->add_all;
+  $repo->commit($message, '--date', $release->date, '--author',$release->author_email );
+  $repo->tag($release->release_version, $message);
 }
+
+method gitify_distribution( $dist ) {
+
+   my $name = $dist->name;
+   say "Gitifing distrubtion ".$name;
+   my $repo = Gitpan::Repo->new( distname => $name );
+     #TODO: Need to check to see if it exists on github, and
+     #      if so, clone it and then figure out which releases
+     #      are missing, and only do the new ones.
+   $repo->git->clean;
+
+   my $releases = $dist->backpan_releases;
+   say "The number of release(s) for $name are: ".$releases->count;
+   say "The versions for $name are: ".join(',',$releases->get_column('version')->all);
+   while( my $backpan_release = $releases->next ){
+        my $release = Gitpan::Release->new(
+           distname => $dist->name,
+           backpan_release => $backpan_release
+        );
+       try  {
+          $self->gitify_release( $release, $repo );
+       } catch {
+          warn 'Got an error gitifing '.$dist->name.
+               ' And release '.$release->release_version.
+               ' Error: '.$_;
+       };
+   }
+}
+
 method main {
 
    require Data::Dumper;
@@ -76,23 +107,15 @@ method main {
    my $dists = $self->backpan_index->dists(); 
    say 'Found '.$dists->count.' number of distributions';
    #say Data::Dumper::Dumper( [ $dists->get_column('name')->all ] );
-   my $first = $dists->first;
-   say 'The first one is: '.$first->get_column('name');
+   #my $first = $dists->first;
+   my $count = 0;
+   while( (my $dist = $dists->next ) && $count < 50000 ){
+      my $distribution = Gitpan::Dist->new( backpan_dist => $dist ); 
+      $self->gitify_distribution( $distribution ); 
+      $count += 1;
+   }
+   #say 'The first one is: '.$first->get_column('name');
    #my $dist = Gitpan::Dist->new( backpan_dist => $first );
 
-   my $dist = Gitpan::Dist->new( name => 'MapReduce' );
-   my $releases = $dist->backpan_releases;
-   my $repo = Gitpan::Repo->new( distname =>  'Goodday' );
-   $repo->git->clean;
-
-   say 'The number of release(s) for MapReduce are: '.$releases->count;
-   say 'The versions for MapReduce are: '.join(',',$releases->get_column('version')->all);
-   while( my $backpan_release = $releases->next ){
-        my $release = Gitpan::Release->new(
-           distname => $dist->name,
-           backpan_release => $backpan_release
-        );
-        $self->gitify_release( $release, $repo );
-   }
 }
 

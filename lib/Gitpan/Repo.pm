@@ -33,13 +33,18 @@ has directory =>
   required  => 1,
   lazy      => 1,
   coerce    => 1,
-  default   => sub { $_[0]->distname };
+  default   => sub {
+     require File::Spec;
+     my $prefix = lc(substr($_[0]->distname,0,2));
+     File::Spec->catfile($prefix,$_[0]->distname);
+  };
 
 has git     =>
   isa       => "Gitpan::Git",
   is        => 'rw',
   required  => 1,
   lazy      => 1,
+  handles   => [qw( add add_all clean commit tag tags )],
   default   => sub {
       require Gitpan::Git;
       return Gitpan::Git->init($_[0]->directory);

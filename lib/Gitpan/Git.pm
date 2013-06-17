@@ -147,9 +147,7 @@ method commit ($message, @args) {
 method tag ( $tagname, $message) {
    $self->run( tag => '-a', '-m', $message, $tagname );
 }
-method tags {
-   $self->run( 'tag' );
-}
+method tags { $self->run( 'tag' ) }
 
 
 
